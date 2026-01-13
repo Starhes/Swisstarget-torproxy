@@ -6,12 +6,16 @@ import os
 # Target website to proxy
 TARGET_URL = "https://swisstargetprediction.ch"
 
+# Check if running in Docker
+IS_DOCKER = os.path.exists('/.dockerenv')
+DEFAULT_TOR_HOST = "tor" if IS_DOCKER else "127.0.0.1"
+
 # Tor SOCKS proxy settings
-TOR_SOCKS_HOST = os.getenv("TOR_SOCKS_HOST", "127.0.0.1")
+TOR_SOCKS_HOST = os.getenv("TOR_SOCKS_HOST", DEFAULT_TOR_HOST)
 TOR_SOCKS_PORT = int(os.getenv("TOR_SOCKS_PORT", 9050))
 
 # Tor control port settings (for IP switching)
-TOR_CONTROL_HOST = os.getenv("TOR_CONTROL_HOST", "127.0.0.1")
+TOR_CONTROL_HOST = os.getenv("TOR_CONTROL_HOST", DEFAULT_TOR_HOST)
 TOR_CONTROL_PORT = int(os.getenv("TOR_CONTROL_PORT", 9051))
 TOR_CONTROL_PASSWORD = os.getenv("TOR_CONTROL_PASSWORD", "your_password_here")
 
