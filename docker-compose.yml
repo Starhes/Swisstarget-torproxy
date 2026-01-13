@@ -31,6 +31,8 @@ services:
       - AUTH_API_KEY=your_secret_key_here # Change this!
     depends_on:
       - tor
+    links:
+      - tor
     networks:
       - tor-network
 
