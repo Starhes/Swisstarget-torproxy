@@ -3,6 +3,9 @@ Configuration for Tor Reverse Proxy
 """
 import os
 
+# Target website to proxy
+TARGET_URL = "https://swisstargetprediction.ch"
+
 # Check if running in Docker or if 'tor' hostname is resolvable
 import socket
 def is_tor_resolvable():
