@@ -105,29 +105,45 @@ class TorClient:
         """Make a request through Tor with automatic IP switching on errors"""
         kwargs.setdefault('timeout', config.REQUEST_TIMEOUT)
         
+        last_response = None
+        
         for attempt in range(config.MAX_RETRIES):
             try:
+                logger.info(f"Attempt {attempt + 1}/{config.MAX_RETRIES}: {method} {url}")
                 response = self.session.request(method, url, **kwargs)
+                last_response = response
                 
                 if response.status_code in config.RETRY_STATUS_CODES:
                     logger.warning(
-                        f"Got status {response.status_code} on attempt {attempt + 1}, "
-                        f"switching IP..."
+                        f"Got status {response.status_code} on attempt {attempt + 1}/{config.MAX_RETRIES}"
                     )
-                    self.switch_ip()
+                    
+                    # Don't switch IP on last attempt
+                    if attempt < config.MAX_RETRIES - 1:
+                        logger.info("Switching IP and retrying...")
+                        self.switch_ip()
+                    else:
+                        logger.warning(f"Max retries reached, returning {response.status_code} response")
                     continue
                 
+                # Success - return the response
+                logger.info(f"Request successful with status {response.status_code}")
                 return response
                 
             except requests.RequestException as e:
                 logger.error(f"Request failed on attempt {attempt + 1}: {e}")
                 if attempt < config.MAX_RETRIES - 1:
+                    logger.info("Switching IP due to connection error...")
                     self.switch_ip()
                 else:
                     raise
         
-        # Return the last response even if it's an error
-        return response
+        # Return the last response (which has an error status code)
+        if last_response is not None:
+            return last_response
+        
+        # This should not happen, but just in case
+        raise requests.RequestException("All retry attempts failed")
 
 
 # Global Tor client instance
