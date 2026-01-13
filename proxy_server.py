@@ -4,7 +4,8 @@ Reverse Proxy Server - Flask application that proxies requests through Tor
 import logging
 from functools import wraps
 from urllib.parse import urljoin
-from flask import Flask, request, Response, jsonify
+import datetime
+from flask import Flask, request, Response, jsonify, render_template, make_response, redirect, url_for
 
 import config
 from tor_client import tor_client
@@ -16,24 +17,50 @@ app = Flask(__name__)
 
 
 def require_auth(f):
-    """Decorator to require API key authentication"""
+    """Decorator to require API key authentication via Header, Query Param, or Cookie"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not config.AUTH_ENABLED:
             return f(*args, **kwargs)
         
-        # Check API key in header or query parameter
-        api_key = request.headers.get('X-API-Key') or request.args.get('api_key')
+        # Check API key in various places
+        api_key = \
+            request.headers.get('X-API-Key') or \
+            request.args.get('api_key') or \
+            request.cookies.get('auth_key')
         
         if not api_key or api_key != config.AUTH_API_KEY:
+            # If browser request (accepts html), redirect to login
+            if 'text/html' in request.headers.get('Accept', ''):
+                return redirect(url_for('login_page', next=request.url))
+            
             logger.warning(f"Unauthorized access attempt from {request.remote_addr}")
             return jsonify({
                 'error': 'Unauthorized',
-                'message': 'Valid API key required. Use X-API-Key header or api_key query parameter.'
+                'message': 'Valid API key required. Use header, query param, or login.'
             }), 401
         
         return f(*args, **kwargs)
     return decorated_function
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login_page():
+    """Login page for browser access"""
+    error = None
+    if request.method == 'POST':
+        api_key = request.form.get('api_key')
+        if api_key == config.AUTH_API_KEY:
+            # Login successful
+            resp = make_response(redirect(request.args.get('next') or '/'))
+            # Set cookie for 30 days
+            expire_date = datetime.datetime.now() + datetime.timedelta(days=30)
+            resp.set_cookie('auth_key', api_key, expires=expire_date, httponly=True)
+            return resp
+        else:
+            error = "Invalid API Key"
+    
+    return render_template('login.html', error=error)
 
 
 def filter_headers(headers, skip_set):

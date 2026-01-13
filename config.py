@@ -7,19 +7,29 @@ import os
 TARGET_URL = "https://swisstargetprediction.ch"
 
 # Check if running in Docker or if 'tor' hostname is resolvable
+# Check if running in Docker or if 'tor' hostname is resolvable
 import socket
-def is_tor_resolvable():
-    try:
-        socket.gethostbyname('tor')
-        return True
-    except socket.error:
-        return False
+import logging
 
-# Determine default based on environment
-if os.path.exists('/.dockerenv') or is_tor_resolvable():
-    DEFAULT_TOR_HOST = "tor"
-else:
-    DEFAULT_TOR_HOST = "127.0.0.1"
+def get_valid_tor_host():
+    """Try to find a resolvable Tor host"""
+    candidates = ['tor', 'tor-proxy', '127.0.0.1']
+    
+    # If we are effectively in Docker (heuristic), prioritize service names
+    if os.path.exists('/.dockerenv'):
+        # Just logging, not changing logic flow yet
+        pass
+        
+    for host in candidates:
+        try:
+            socket.gethostbyname(host)
+            return host
+        except socket.error:
+            continue
+            
+    return "127.0.0.1"  # Fallback
+
+DEFAULT_TOR_HOST = get_valid_tor_host()
 
 # Tor SOCKS proxy settings
 TOR_SOCKS_HOST = os.getenv("TOR_SOCKS_HOST", DEFAULT_TOR_HOST)

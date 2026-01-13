@@ -95,10 +95,13 @@ curl -H "X-API-Key: your_secret_key" http://localhost:5000/api/current-ip
 # 切换 IP
 curl -X POST -H "X-API-Key: your_secret_key" http://localhost:5000/api/switch-ip
 
-# 访问代理站点（方式一：Header）
+# 访问代理站点（方式一：网页登录）
+在浏览器访问 http://localhost:5000/ 会自动跳转到登录页面，输入密钥即可。
+
+# 访问代理站点（方式二：Header）
 curl -H "X-API-Key: your_secret_key" http://localhost:5000/
 
-# 访问代理站点（方式二：URL 参数）
+# 访问代理站点（方式三：URL 参数）
 curl "http://localhost:5000/?api_key=your_secret_key"
 ```
 
