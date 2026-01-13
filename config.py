@@ -3,12 +3,20 @@ Configuration for Tor Reverse Proxy
 """
 import os
 
-# Target website to proxy
-TARGET_URL = "https://swisstargetprediction.ch"
+# Check if running in Docker or if 'tor' hostname is resolvable
+import socket
+def is_tor_resolvable():
+    try:
+        socket.gethostbyname('tor')
+        return True
+    except socket.error:
+        return False
 
-# Check if running in Docker
-IS_DOCKER = os.path.exists('/.dockerenv')
-DEFAULT_TOR_HOST = "tor" if IS_DOCKER else "127.0.0.1"
+# Determine default based on environment
+if os.path.exists('/.dockerenv') or is_tor_resolvable():
+    DEFAULT_TOR_HOST = "tor"
+else:
+    DEFAULT_TOR_HOST = "127.0.0.1"
 
 # Tor SOCKS proxy settings
 TOR_SOCKS_HOST = os.getenv("TOR_SOCKS_HOST", DEFAULT_TOR_HOST)
