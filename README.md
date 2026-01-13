@@ -15,6 +15,7 @@ docker pull ghcr.io/starhes/swisstarget-torproxy:latest
 - 🔄 通过 Tor 网络代理所有请求
 - 🔀 遇到 403/404/429 错误自动切换 IP
 - 📡 提供 API 端点手动管理 IP
+- 🔐 API Key 认证保护
 - 🐳 Docker 一键部署
 
 ## 快速开始
@@ -85,17 +86,20 @@ docker-compose logs -f proxy
 ### 示例
 
 ```bash
-# 健康检查
+# 健康检查（无需认证）
 curl http://localhost:5000/api/health
 
-# 获取当前 IP
-curl http://localhost:5000/api/current-ip
+# 获取当前 IP（需要 API Key）
+curl -H "X-API-Key: your_secret_key" http://localhost:5000/api/current-ip
 
 # 切换 IP
-curl -X POST http://localhost:5000/api/switch-ip
+curl -X POST -H "X-API-Key: your_secret_key" http://localhost:5000/api/switch-ip
 
-# 访问代理站点首页
-curl http://localhost:5000/
+# 访问代理站点（方式一：Header）
+curl -H "X-API-Key: your_secret_key" http://localhost:5000/
+
+# 访问代理站点（方式二：URL 参数）
+curl "http://localhost:5000/?api_key=your_secret_key"
 ```
 
 ## 配置说明
@@ -111,6 +115,8 @@ curl http://localhost:5000/
 | `TOR_CONTROL_PASSWORD` | - | Tor 控制密码 |
 | `PROXY_HOST` | 0.0.0.0 | 代理服务监听地址 |
 | `PROXY_PORT` | 5000 | 代理服务监听端口 |
+| `AUTH_ENABLED` | true | 是否启用认证 |
+| `AUTH_API_KEY` | changeme123 | API 密钥（请修改！） |
 
 ## 自动 IP 切换
 

@@ -2,6 +2,7 @@
 Reverse Proxy Server - Flask application that proxies requests through Tor
 """
 import logging
+from functools import wraps
 from urllib.parse import urljoin
 from flask import Flask, request, Response, jsonify
 
@@ -12,6 +13,27 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+
+def require_auth(f):
+    """Decorator to require API key authentication"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not config.AUTH_ENABLED:
+            return f(*args, **kwargs)
+        
+        # Check API key in header or query parameter
+        api_key = request.headers.get('X-API-Key') or request.args.get('api_key')
+        
+        if not api_key or api_key != config.AUTH_API_KEY:
+            logger.warning(f"Unauthorized access attempt from {request.remote_addr}")
+            return jsonify({
+                'error': 'Unauthorized',
+                'message': 'Valid API key required. Use X-API-Key header or api_key query parameter.'
+            }), 401
+        
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 def filter_headers(headers, skip_set):
@@ -33,6 +55,7 @@ def health_check():
 
 
 @app.route('/api/current-ip', methods=['GET'])
+@require_auth
 def get_current_ip():
     """Get the current Tor exit IP"""
     ip = tor_client.get_current_ip()
@@ -40,6 +63,7 @@ def get_current_ip():
 
 
 @app.route('/api/switch-ip', methods=['POST'])
+@require_auth
 def switch_ip():
     """Manually trigger IP switch"""
     old_ip = tor_client.get_current_ip()
@@ -55,6 +79,7 @@ def switch_ip():
 
 @app.route('/', defaults={'path': ''}, methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'])
 @app.route('/<path:path>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'])
+@require_auth
 def proxy(path):
     """
     Main proxy endpoint - forwards all requests to the target site through Tor

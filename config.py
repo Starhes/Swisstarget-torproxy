@@ -19,6 +19,10 @@ TOR_CONTROL_PASSWORD = os.getenv("TOR_CONTROL_PASSWORD", "your_password_here")
 PROXY_HOST = os.getenv("PROXY_HOST", "0.0.0.0")
 PROXY_PORT = int(os.getenv("PROXY_PORT", 5000))
 
+# Authentication settings
+AUTH_ENABLED = os.getenv("AUTH_ENABLED", "true").lower() == "true"
+AUTH_API_KEY = os.getenv("AUTH_API_KEY", "changeme123")  # Change this!
+
 # Retry configuration
 RETRY_STATUS_CODES = [403, 404, 429]  # Status codes that trigger IP switch
 MAX_RETRIES = 3  # Maximum retry attempts per request
