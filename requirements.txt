@@ -1,0 +1,6 @@
+# Dependencies for Tor Reverse Proxy
+Flask==3.0.0
+requests==2.31.0
+PySocks==1.7.1
+stem==1.8.2
+Werkzeug==3.0.1
